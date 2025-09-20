@@ -25,7 +25,7 @@ int send_all(int sockfd, const char *data, size_t len) {
     while (total_sent < len) {
         int bytes_sent = send(sockfd, data + total_sent, len - total_sent, 0);
         if (bytes_sent == -1) {
-            perror("send_all failed");
+            std::cerr << "send_all failed" << std::endl;
             return -1; // Error
         }
         total_sent += bytes_sent;
@@ -111,7 +111,10 @@ int server(std::string port) {
 
 
     std::string message = "'FIN' received, shutting down connection";
-    send_all(newfd, message.c_str(), message.size());
+    if (send_all(newfd, message.c_str(), message.size()) == -1) {
+        std::cerr << "send_all from server failed" << std::endl;
+        return -1; // Error
+    }
 
     if (shutdown(newfd, SHUT_WR) == -1) { // shutting down connection
         perror("shutdown");
