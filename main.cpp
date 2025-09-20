@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <chrono>
+#include <thread>   // Required for std::this_thread
 
 // The main function takes two parameters to handle command-line arguments:
 // 1. argc (argument count): An integer for the number of arguments.
@@ -117,7 +118,7 @@ int server(std::string port) {
     }
 
     if (shutdown(newfd, SHUT_WR) == -1) { // shutting down connection
-        perror("shutdown");
+        std::cerr << "shutdown failed" << std::endl;
     }
 
     if (duration_s.count() != 0) {
@@ -174,7 +175,6 @@ int client(char* hostname, char* port, int time_s) {
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> duration_s;
     long int bytes_sent = 0;
-    std::cout << "Sending data..." << std::endl;
     while (true) {
         std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
         duration_s = end_time - start_time;
@@ -182,6 +182,7 @@ int client(char* hostname, char* port, int time_s) {
             break;
         }
 
+        std::cout << "Sending data..." << std::endl;
         if (send_all(sockfd, package, CHUNK_SIZE_BYTES) == -1) {
             std::cerr << "Failed to send data chunk." << std::endl;
             close(sockfd);
@@ -189,6 +190,7 @@ int client(char* hostname, char* port, int time_s) {
             return -1;
         }
         bytes_sent += CHUNK_SIZE_BYTES;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     // send end message
