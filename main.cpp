@@ -21,15 +21,6 @@
 std::string end_message = "FIN";
 
 int send_all(int sockfd, const char *data, size_t len) {
-    // check if socket is ready to accept more data
-    fd_set write_fds;
-    FD_ZERO(&write_fds);
-    FD_SET(sockfd, &write_fds);
-    if (!FD_ISSET(sockfd, &write_fds)) {
-       return -2; // full
-    }
-
-    // send data
     size_t total_sent = 0;
     while (total_sent < len) {
         int bytes_sent = send(sockfd, data + total_sent, len - total_sent, 0);
@@ -197,13 +188,12 @@ int client(char* hostname, char* port, int time_s) {
             close(sockfd);
             freeaddrinfo(res);
             return -1;
-        } else if (flag == -2) {
-            std::cerr << "Socket buffer is full." << std::endl;
         }
         bytes_sent += CHUNK_SIZE_BYTES;
     }
 
     // send end message
+    std::cout << "Sending end message..." << std::endl;
     if (send_all(sockfd, end_message.c_str(), end_message.size()) == -1) {
         std::cerr << "Failed to send end message." << std::endl;
         close(sockfd);
