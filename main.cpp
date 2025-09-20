@@ -171,6 +171,7 @@ int client(char* hostname, char* port, int time_s) {
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> duration_s;
     long int bytes_sent = 0;
+    std::cout << "Sending data..." << std::endl;
     while (true) {
         std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
         duration_s = end_time - start_time;
@@ -199,7 +200,9 @@ int client(char* hostname, char* port, int time_s) {
     char received_buffer[1000];
     int bytes_received = recv(sockfd, received_buffer, sizeof(received_buffer), 0);
     if (bytes_received == -1) {
-        perror("Error receiving data");
+        std::cerr << "Error receiving end message." << std::endl;
+        close(sockfd);
+        freeaddrinfo(res);
         return -1;
     }
     std::string message_received(received_buffer, bytes_received);
