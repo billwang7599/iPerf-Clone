@@ -21,14 +21,6 @@
 std::string end_message = "FIN";
 
 int send_all(int sockfd, const char *data, size_t len) {
-    // check if socket is ready to accept more data
-    fd_set write_fds;
-    FD_ZERO(&write_fds);
-    FD_SET(sockfd, &write_fds);
-    if (!FD_ISSET(sockfd, &write_fds)) {
-       return -2; // full
-    }
-
     // send data
     size_t total_sent = 0;
     while (total_sent < len) {
@@ -104,16 +96,19 @@ int server(std::string port) {
 
     // Loop until the connection is closed (recv returns 0) or an error occurs (returns -1)
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
+    std::string data_stream;
     while ((bytes_in_this_chunk = recv(newfd, buffer, CHUNK_SIZE, 0)) > 0) {
 
         // 1. Add the number of bytes from this specific call to the running total.
         total_bytes_received += bytes_in_this_chunk;
-        std::string received_data(buffer, bytes_in_this_chunk);
-        received_data.erase(received_data.find_last_not_of(" \t\n\r") + 1);
-        std::cout << received_data << '\n';
-        if (received_data == end_message) {
-            break;
+        data_stream.append(buffer, bytes_in_this_chunk);
+        size_t fin_pos = data_stream.find(end_message);
+        if (fin_pos != std::string::npos) {
+            std::cout << "'FIN' detected in data stream." << std::endl;
+            break; // Exit the loop!
         }
+
     }
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> duration_s = end_time - start_time;
