@@ -1,24 +1,11 @@
-#include <cstring>
 #include <iostream>
 #include <string>
-#include <sys/socket.h>  // For socket functions
-#include <sys/types.h>
 #include <unistd.h>      // For close
-#include <netinet/in.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
 #include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <chrono>
 
-// The main function takes two parameters to handle command-line arguments:
-// 1. argc (argument count): An integer for the number of arguments.
-// 2. argv (argument vector): An array of character pointers (C-style strings)
-//    listing all the arguments.
-//
 std::string end_message = "FIN";
+const int CHUNK_SIZE_BYTES = 1000;
 
 int send_all(int sockfd, const char *data, size_t len) {
     // send data
@@ -77,13 +64,9 @@ int server(std::string port) {
         return -1;
     }
 
-    std::cout << "Server started on port " << port << std::endl;
-
-
     addr_size = sizeof(their_addr);
 
-    const int CHUNK_SIZE = 1000;
-    char buffer[CHUNK_SIZE];
+    char buffer[CHUNK_SIZE_BYTES];
     long long total_bytes_received = 0; // Use a larger type for a potentially large total
     int bytes_in_this_chunk;
 
@@ -92,13 +75,12 @@ int server(std::string port) {
         std::cerr << "Connection error" << std::endl;
     }
 
-    std::cout << "Connected to new client" << std::endl;
 
     // Loop until the connection is closed (recv returns 0) or an error occurs (returns -1)
-    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-
     std::string data_stream;
-    while ((bytes_in_this_chunk = recv(newfd, buffer, CHUNK_SIZE, 0)) > 0) {
+
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+    while ((bytes_in_this_chunk = recv(newfd, buffer, CHUNK_SIZE_BYTES, 0)) > 0) {
 
         // 1. Add the number of bytes from this specific call to the running total.
         total_bytes_received += bytes_in_this_chunk;
@@ -170,22 +152,17 @@ int client(char* hostname, char* port, int time_s) {
     }
 
     // send data to server
-    const int CHUNK_SIZE_BYTES = 1000;
     char package[CHUNK_SIZE_BYTES];
     memset(package, '0', CHUNK_SIZE_BYTES);
 
-
-    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> duration_s;
     long int bytes_sent = 0;
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
     while (true) {
-        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-        duration_s = end_time - start_time;
         if (duration_s.count() >= time_s) {
             break;
         }
 
-        std::cout << "Sending data..." << std::endl;
         int flag = send_all(sockfd, package, CHUNK_SIZE_BYTES);
         if (flag == -1) {
             std::cerr << "Failed to send data chunk." << std::endl;
@@ -196,9 +173,10 @@ int client(char* hostname, char* port, int time_s) {
             std::cerr << "Socket buffer is full." << std::endl;
         }
         bytes_sent += CHUNK_SIZE_BYTES;
+        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+        duration_s = end_time - start_time;
     }
 
-    std::cout << "Sending end message..." << std::endl;
     // send end message
     if (send_all(sockfd, end_message.c_str(), end_message.size()) == -1) {
         std::cerr << "Failed to send end message." << std::endl;
@@ -208,7 +186,7 @@ int client(char* hostname, char* port, int time_s) {
     }
 
     // receive end message
-    char received_buffer[1000];
+    char received_buffer[CHUNK_SIZE_BYTES];
     int bytes_received = recv(sockfd, received_buffer, sizeof(received_buffer), 0);
     if (bytes_received == -1) {
         std::cerr << "Error receiving end message." << std::endl;
@@ -224,7 +202,7 @@ int client(char* hostname, char* port, int time_s) {
 
     double kb_sent = bytes_sent / 1024.0;
     double rate_mbps = kb_sent / duration_s.count() / 1000 * 8;
-    std::cout << "Sent=" << kb_sent << " KB,";
+    std::cout << "Sent=" << kb_sent << " KB, ";
     std::cout << "Rate= " << rate_mbps << " Mbps" << std::endl;
     return 0;
 }
