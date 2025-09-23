@@ -3,6 +3,7 @@
 #include <unistd.h>      // For close
 #include <netdb.h>
 #include <chrono>
+#include <cstring>
 
 std::string end_message = "FIN";
 const int CHUNK_SIZE_BYTES = 1000;
@@ -194,6 +195,9 @@ int client(char* hostname, char* port, int time_s) {
         freeaddrinfo(res);
         return -1;
     }
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+    // calculate new RTT rate given new time
+    duration_s = end_time - start_time;
     std::string message_received(received_buffer, bytes_received);
     std::cout << message_received << std::endl;
 
