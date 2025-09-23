@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <unistd.h>      // For close
@@ -88,7 +89,7 @@ int server(std::string port) {
         data_stream.append(buffer, bytes_in_this_chunk);
         size_t fin_pos = data_stream.find(end_message);
         if (fin_pos != std::string::npos) {
-            std::cout << "'FIN' detected in data stream." << std::endl;
+            // std::cout << "'FIN' detected in data stream." << std::endl;
             break; // Exit the loop!
         }
 
@@ -108,8 +109,8 @@ int server(std::string port) {
     }
 
     if (duration_s.count() != 0) {
-        double kb_received = total_bytes_received / 1024.0;
-        double mbps = kb_received * 8.0 / 1000 / duration_s.count();
+        double kb_received = round(total_bytes_received * 10 / 1024.0)/10;
+        double mbps = round(kb_received * 80 / 1000 / duration_s.count()) / 10;
         std::cout << "Received=" << kb_received << " KB, Rate=" << mbps << " Mbps" << std::endl;
     }
     close(newfd);
@@ -198,27 +199,26 @@ int client(char* hostname, char* port, int time_s) {
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
     // calculate new RTT rate given new time
     duration_s = end_time - start_time;
-    std::string message_received(received_buffer, bytes_received);
-    std::cout << message_received << std::endl;
 
     close(sockfd);
     freeaddrinfo(res);
 
-    double kb_sent = bytes_sent / 1024.0;
-    double rate_mbps = kb_sent / duration_s.count() / 1000 * 8;
+    double kb_sent = round(10 * bytes_sent / 1024.0) / 10;
+    double rate_mbps = round(kb_sent * 10 / duration_s.count() / 1000 * 8) / 10;
     std::cout << "Sent=" << kb_sent << " KB, ";
     std::cout << "Rate= " << rate_mbps << " Mbps" << std::endl;
     return 0;
 }
 
 int main(int argc, char* argv[]) {
+    std::string error = "Error: missing or extra arguments";
     // --- Server Mode Check ---
     if (argc == 4) {
         // Expected format: ./iPerfer -s -p <port>
         if (std::string(argv[1]) == "-s" && std::string(argv[2]) == "-p") {
             return server(argv[3]);
         } else {
-            std::cerr << "Error: Invalid or misplaced arguments for server mode." << std::endl;
+            std::cerr << error << std::endl;
             return 1;
         }
     }
@@ -234,17 +234,17 @@ int main(int argc, char* argv[]) {
                 // Safely convert time argument to integer
                 return client(argv[3], argv[5], std::stoi(argv[7]));
             } catch (const std::exception& e) {
-                std::cerr << "Error: Invalid time value '" << argv[7] << "'. Must be an integer." << std::endl;
+                std::cerr << error << std::endl;
                 return 1;
             }
         } else {
-            std::cerr << "Error: Invalid or misplaced arguments for client mode." << std::endl;
+            std::cerr << error << std::endl;
             return 1;
         }
     }
     // --- Incorrect Number of Arguments ---
     else {
-        std::cerr << "Error: Missing or extra arguments." << std::endl;
+        std::cerr << error << std::endl;
         return 1;
     }
 
