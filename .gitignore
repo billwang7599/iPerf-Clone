@@ -40,3 +40,6 @@
 
 # debug information files
 *.dwo
+
+# DS Store
+.DS_STORE
