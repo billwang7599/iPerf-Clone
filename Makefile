@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Wall -g
 
-main: iperfer.cpp
+main: iPerfer.cpp
 	$(CXX) $(CXXFLAGS) iperfer.cpp -o iPerfer
 
 clean:

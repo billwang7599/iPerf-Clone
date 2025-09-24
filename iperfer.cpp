@@ -52,7 +52,7 @@ int server(std::string port) {
 
     // binds socket to address
     if (bind(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
-        perror("Error binding socket");
+        std::cerr << "Error binding socket" << std::endl;
         close(sockfd);
         freeaddrinfo(res);
         return -1;
@@ -61,7 +61,7 @@ int server(std::string port) {
     freeaddrinfo(res);
 
     if (listen(sockfd, 10) == -1) {
-        perror("Error listening on socket");
+        std::cerr << "Error listening on socket" << std::endl;
         close(sockfd);
         return -1;
     }
@@ -126,7 +126,7 @@ int client(char* hostname, char* port, int time_s) {
     }
 
     if (time_s < 1) {
-        std::cerr << "Error: time must be greater than 0" << std::endl;
+        std::cerr << "Error: time argument must be greater than 0" << std::endl;
         return 1; // Indicates failure
     }
 
@@ -147,7 +147,7 @@ int client(char* hostname, char* port, int time_s) {
     sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
-        perror("Error connecting to server");
+        std::cerr << "Error connecting to server" << std::endl;
         close(sockfd);
         freeaddrinfo(res);
         return -1;
@@ -212,39 +212,39 @@ int client(char* hostname, char* port, int time_s) {
 
 int main(int argc, char* argv[]) {
     std::string error = "Error: missing or extra arguments";
-    // --- Server Mode Check ---
     if (argc == 4) {
-        // Expected format: ./iPerfer -s -p <port>
+        // expected format: ./iPerfer -s -p <port>
         if (std::string(argv[1]) == "-s" && std::string(argv[2]) == "-p") {
             return server(argv[3]);
         } else {
             std::cerr << error << std::endl;
+            std::cout << error << std::endl;
             return 1;
         }
     }
-    // --- Client Mode Check ---
     else if (argc == 8) {
-        // Expected format: ./iPerfer -c -h <host> -p <port> -t <time>
+        // expected format: ./iPerfer -c -h <host> -p <port> -t <time>
         if (std::string(argv[1]) == "-c" &&
             std::string(argv[2]) == "-h" &&
             std::string(argv[4]) == "-p" &&
             std::string(argv[6]) == "-t") {
 
             try {
-                // Safely convert time argument to integer
                 return client(argv[3], argv[5], std::stoi(argv[7]));
             } catch (const std::exception& e) {
                 std::cerr << error << std::endl;
+                std::cout << error << std::endl;
                 return 1;
             }
         } else {
             std::cerr << error << std::endl;
+            std::cout << error << std::endl;
             return 1;
         }
     }
-    // --- Incorrect Number of Arguments ---
     else {
         std::cerr << error << std::endl;
+        std::cout << error << std::endl;
         return 1;
     }
 
